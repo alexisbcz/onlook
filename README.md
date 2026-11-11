@@ -55,6 +55,70 @@
 > This is the open-source visual editor that started Onlook (Next.js + Tailwind). The hosted product we're building next, for AI-native designers, is in early access via the [waitlist](https://www.onlook.com/waitlist?utm_source=github&utm_medium=readme&utm_campaign=waitlist-2026) above.
 
 
+> **This fork adds iOS and Android apps.** Onlook can now create and edit React Native apps built with Expo, show them in iPhone and Android frames, and open them on a real phone through Expo Go. It also adds local sandboxes, so the whole thing runs on your machine without a CodeSandbox account. See [iOS and Android apps](#ios-and-android-apps-expo) below.
+
+## iOS and Android apps (Expo)
+
+<p align="center">
+  <img width="900" alt="Editing an Expo app in Onlook, in an iPhone and an Android frame" src="assets/mobile/onlook-mobile-demo.gif">
+  <br>
+  <a href="assets/mobile/onlook-mobile-demo.mp4">Watch the full demo (MP4, 64 s)</a>
+</p>
+
+Pick **Create → Mobile App (iOS & Android)** on the projects page. Onlook starts an Expo app (Expo Router, NativeWind, TypeScript) and opens it in two frames, an iPhone 16 Pro and a Pixel 9, rendered with React Native Web.
+
+From there the editor works the way it does for Next.js:
+
+- Click any `View`, `Text` or `Pressable` to select it. Typography, spacing, radius, colors and layout edits are written back to the component's `className` as NativeWind classes.
+- The code panel jumps to the selected element in `src/app/*.tsx`.
+- Expo Router screens show up in the Pages panel (`index`, `profile`, `(tabs)/…`), and you can open them in any frame.
+- The Brand panel reads the project's Tailwind palette, including NativeWind's `global.css`.
+- **Run on device** in the top bar shows a QR code. Scan it with Expo Go on iOS or Android to run the app natively, and changes you make in Onlook reload on the phone.
+
+Existing Expo projects that use Expo Router and NativeWind work too. With local sandboxes on, import one from GitHub: Onlook detects Expo from `package.json`, starts it with `expo start`, finds the `app/_layout.tsx` root and adds its two bridge files (see below). On CodeSandbox, GitHub imports still assume a Next.js app on port 3000.
+
+### Run it locally
+
+Phones and simulators need to reach the dev server, so mobile projects run best in a local sandbox: a folder on your machine that the Onlook server manages for you.
+
+```bash
+bun install
+cd apps/backend && supabase start && cd ../..   # local Supabase
+bun run db:push && bun run db:seed
+
+# apps/web/client/.env: the usual Supabase keys, plus
+ONLOOK_LOCAL_SANDBOXES=true
+# optional, defaults to ~/.onlook/sandboxes
+ONLOOK_LOCAL_SANDBOX_DIR=/path/to/sandboxes
+
+bun run dev
+```
+
+Sign in with the dev login, then create a mobile app. The first start runs `bun install` and `expo start --web --lan` in the sandbox, which takes about ten seconds once Bun's cache is warm.
+
+Local sandboxes run commands on your machine. They are off unless `ONLOOK_LOCAL_SANDBOXES=true`. Every request must come from a signed-in user who has access to that project. Processes get a minimal environment (`PATH`, `HOME` and similar), never the Onlook server's secrets.
+
+With CodeSandbox (the default, `ONLOOK_LOCAL_SANDBOXES` unset), the mobile template is cloned from the `template-expo` branch of this repository and served on port 8081. The canvas works the same way. Expo Go can't reach a cloud sandbox directly, though, so run `npx expo start --tunnel` in the terminal for a phone preview.
+
+### How it works
+
+| Piece | Where | What it does |
+| --- | --- | --- |
+| Expo template | `templates/expo/` | Expo Router + NativeWind + React Native Web starter, published to the `template-expo` branch |
+| Router detection | `pages/helper.ts`, `RouterType.EXPO` | Treats `app/_layout.tsx` or `src/app/_layout.tsx` as an Expo Router root and scans screens as pages |
+| Babel plugin | `onlook/babel-plugin-react-native.js` | React Native Web drops unknown props, so `data-oid="…"` becomes `dataSet={{ oid: "…" }}`, which it renders as `data-oid`. Native builds ignore it |
+| Preload bridge | `onlook/preload.js` | Imported by the root `_layout`. On web, inside the Onlook iframe only, it loads the editor script. Elsewhere it does nothing |
+| Local provider | `packages/code-provider/src/providers/local`, `apps/web/client/src/server/local-sandbox` | Implements the `Provider` interface over `/api/local-sandbox`: file operations as JSON, dev server, terminal output and file changes over server-sent events |
+| Phone frames | `DefaultNativeFrames` | New Expo projects start with an iPhone 16 Pro and a Pixel 9 frame |
+| Run on device | `top-bar/run-on-device.tsx` | `exp://<LAN IP>:<port>` QR code for Expo Go |
+
+### Known limits
+
+- The canvas shows the React Native Web rendering. It matches iOS and Android closely for layout and styling, but native-only modules (camera, maps, haptics) need Expo Go or a simulator.
+- Styling goes through NativeWind classes. Projects that style only with `StyleSheet.create` can still be selected and edited in code, but toolbar edits add classes rather than rewriting style objects.
+- Font management (`next/font`) is turned off for Expo projects.
+- Inline text editing works the same as on web projects. Double-clicking opens the element in the code panel.
+
 # An Open-Source, Visual-First Code Editor
 
 Craft websites, prototypes, and designs with AI in Next.js + TailwindCSS. Make
@@ -68,6 +132,11 @@ Make, Webflow, etc.
 - [x] Create Next.js app in seconds
   - [x] Start from text or image
   - [x] Use prebuilt templates
+- [x] Create iOS and Android apps (Expo + NativeWind)
+  - [x] Edit in iPhone and Android frames
+  - [x] Expo Router screens as pages
+  - [x] Run on a real device with Expo Go
+  - [x] Run sandboxes locally
 - [x] Visually edit your app
   - [x] Use Figma-like UI
   - [x] Preview your app in real-time
@@ -96,7 +165,8 @@ Make, Webflow, etc.
   - [ ] Setup and use MCPs in projects
   - [ ] Allow Onlook to use itself as a toolcall for branch creation and iteration
 - [ ] Advanced project support
-  - [ ] Support non-NextJS projects
+  - [x] Support React Native (Expo) projects
+  - [ ] Support other non-NextJS projects
   - [ ] Support non-Tailwind projects
 
 ![Onlook-GitHub-Example](https://github.com/user-attachments/assets/642de37a-72cc-4056-8eb7-8eb42714cdc4)
@@ -108,8 +178,9 @@ Use our [hosted app](https://onlook.com) or
 
 ### Usage
 
-Onlook will run on any Next.js + TailwindCSS project, import your project into
-Onlook or start from scratch within the editor.
+Onlook will run on any Next.js + TailwindCSS project, or any Expo Router +
+NativeWind app. Import your project into Onlook or start from scratch within the
+editor.
 
 Use the AI chat to create or edit a project you're working on. At any time, you
 can always right-click an element to open up the exact location of the element
@@ -186,11 +257,13 @@ For a full walkthrough, check out our
 #### Sandbox and hosting
 
 - [CodeSandboxSDK](https://codesandbox.io/docs/sdk) - Dev sandbox
+- Local sandboxes - Dev sandbox on your own machine (`ONLOOK_LOCAL_SANDBOXES=true`)
 - [Freestyle](https://www.freestyle.sh/) - Hosting
 
 #### Runtime
 
 - [Bun](https://bun.sh/) - Monorepo, runtime, bundler
+- [Expo](https://expo.dev/) + [NativeWind](https://www.nativewind.dev/) - iOS and Android apps
 - [Docker](https://www.docker.com/) - Container management
 
 ## Contributing
