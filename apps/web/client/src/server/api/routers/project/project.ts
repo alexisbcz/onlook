@@ -15,6 +15,7 @@ import {
     createDefaultFrame,
     createDefaultUserCanvas,
     DefaultFrameType,
+    DefaultNativeFrames,
     frames,
     fromDbCanvas,
     fromDbFrame,
@@ -241,6 +242,7 @@ export const projectRouter = createTRPCRouter({
             userId: z.string(),
             sandboxId: z.string(),
             sandboxUrl: z.string(),
+            framework: z.enum(['nextjs', 'expo']).optional(),
             creationData: projectCreateRequestInsertSchema
                 .omit({
                     projectId: true,
@@ -273,21 +275,39 @@ export const projectRouter = createTRPCRouter({
                 const newCanvas = createDefaultCanvas(newProject.id);
                 await tx.insert(canvases).values(newCanvas);
 
-                const newUserCanvas = createDefaultUserCanvas(input.userId, newCanvas.id, {
-                    x: '120',
-                    y: '120',
-                    scale: '0.56',
-                });
+                const isNative = input.framework === 'expo';
+                const newUserCanvas = createDefaultUserCanvas(
+                    input.userId,
+                    newCanvas.id,
+                    isNative
+                        ? { x: '80', y: '60', scale: '0.8' }
+                        : { x: '120', y: '120', scale: '0.56' },
+                );
                 await tx.insert(userCanvases).values(newUserCanvas);
 
-                // 5. Create the default frame
-                const desktopFrame = createDefaultFrame({
-                    canvasId: newCanvas.id,
-                    branchId: newBranch.id,
-                    url: input.sandboxUrl,
-                    type: DefaultFrameType.DESKTOP,
-                });
-                await tx.insert(frames).values(desktopFrame);
+                // 5. Create the default frames: a desktop frame for web apps,
+                // an iPhone and an Android phone for React Native apps.
+                if (isNative) {
+                    await tx.insert(frames).values(
+                        Object.values(DefaultNativeFrames).map(({ name: _name, ...position }) =>
+                            createDefaultFrame({
+                                canvasId: newCanvas.id,
+                                branchId: newBranch.id,
+                                url: input.sandboxUrl,
+                                type: DefaultFrameType.MOBILE,
+                                overrides: position,
+                            }),
+                        ),
+                    );
+                } else {
+                    const desktopFrame = createDefaultFrame({
+                        canvasId: newCanvas.id,
+                        branchId: newBranch.id,
+                        url: input.sandboxUrl,
+                        type: DefaultFrameType.DESKTOP,
+                    });
+                    await tx.insert(frames).values(desktopFrame);
+                }
 
                 // 6. Create the default chat conversation
                 await tx.insert(conversations).values(createDefaultConversation(newProject.id));

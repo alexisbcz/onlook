@@ -19,6 +19,10 @@ export function shouldIgnoreMessage(message: string) {
     if (message.startsWith('<w>')) {
         return true;
     }
+    // Expo probes the iOS Simulator in the background and ignores failures (e.g. no Xcode).
+    if (message.includes('xcrun simctl')) {
+        return true;
+    }
     return false;
 }
 

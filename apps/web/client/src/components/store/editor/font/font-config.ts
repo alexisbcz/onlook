@@ -263,6 +263,11 @@ export const ensureFontConfigFileExists = async (fontConfigPath: string, editorE
 export const getFontConfigPath = async (editorEngine: EditorEngine): Promise<string | null> => {
     const routerConfig = await editorEngine.activeSandbox.getRouterConfig();
 
+    // Font management relies on next/font, which React Native (Expo) projects don't use.
+    if (routerConfig?.type === RouterType.EXPO) {
+        return null;
+    }
+
     if (routerConfig) {
         let fontConfigPath: string;
         if (routerConfig.type === RouterType.APP) {

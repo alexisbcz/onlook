@@ -9,6 +9,7 @@ import {
     getAstFromContent,
     getContentFromAst,
     getContentFromTemplateNode,
+    injectExpoPreloadImport,
     injectPreloadScript,
 } from '@onlook/parser';
 import { isRootLayoutFile, pathsEqual } from '@onlook/utility';
@@ -65,7 +66,11 @@ export class CodeFileSystem extends FileSystem {
         const ast = getAstFromContent(content);
         if (ast) {
             if (isRootLayoutFile(path, this.options.routerType)) {
-                injectPreloadScript(ast);
+                if (this.options.routerType === RouterType.EXPO) {
+                    injectExpoPreloadImport(ast, path);
+                } else {
+                    injectPreloadScript(ast);
+                }
             }
 
             const existingOids = await this.getFileOids(path);

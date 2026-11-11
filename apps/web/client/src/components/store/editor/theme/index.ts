@@ -679,7 +679,11 @@ export class ThemeManager {
         }
 
         const configPath = list.find((file) => file.path.includes('tailwind.config')) ?? null;
-        const cssPath = list.find((file) => file.path.includes('globals.css')) ?? null;
+        // NativeWind (React Native) projects conventionally name it `global.css`
+        const cssPath =
+            list.find((file) => file.path.includes('globals.css')) ??
+            list.find((file) => file.path.endsWith('/global.css') || file.path === 'global.css') ??
+            null;
 
         return { configPath: configPath?.path ?? null, cssPath: cssPath?.path ?? null };
     }

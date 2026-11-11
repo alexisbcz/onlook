@@ -118,7 +118,16 @@
                     "tooltip": "新しいテキスト要素を追加"
                 }
             },
-            "versionHistory": "バージョン履歴"
+            "versionHistory": "バージョン履歴",
+            "runOnDevice": {
+                "button": "デバイスで実行",
+                "title": "スマートフォンで開く",
+                "description": "Expo Go アプリ (iOS / Android) でスキャンすると、このアプリをネイティブで実行できます。Onlook での編集はデバイスに反映されます。",
+                "lanHint": "スマートフォンはこのコンピューターと同じ Wi-Fi に接続してください。",
+                "tunnelHint": "クラウドサンドボックスには Expo Go から直接接続できません。ターミナルで `npx expo start --tunnel` を実行し、表示された QR コードをスキャンしてください。",
+                "copy": "リンクをコピー",
+                "copied": "リンクをコピーしました"
+            }
         },
         "panels": {
             "edit": {
@@ -282,6 +291,7 @@
             "goToAllProjects": "すべてのプロジェクトへ",
             "newProject": "新規プロジェクト",
             "blankProject": "空白プロジェクト",
+            "mobileApp": "モバイルアプリ (iOS & Android)",
             "startFromScratch": "新規作成",
             "importProject": "プロジェクトをインポート",
             "subscriptions": "サブスクリプション",

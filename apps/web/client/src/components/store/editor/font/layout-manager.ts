@@ -10,7 +10,7 @@ import {
     updateClassNameWithFontVar,
     updateTemplateLiteralWithFontClass,
 } from '@onlook/fonts';
-import type { CodeDiff, Font } from '@onlook/models';
+import { RouterType, type CodeDiff, type Font } from '@onlook/models';
 import type { T } from '@onlook/parser';
 import { generate, getAstFromContent, t, traverse } from '@onlook/parser';
 
@@ -295,6 +295,11 @@ export const getLayoutContext = async (
 
     if (!layoutPath || !routerConfig) {
         console.error('Could not get layout path or router config');
+        return;
+    }
+
+    if (routerConfig.type === RouterType.EXPO) {
+        // next/font layouts don't apply to React Native (Expo) projects
         return;
     }
 

@@ -50,6 +50,7 @@
             "goToAllProjects": "查看所有项目",
             "newProject": "新建项目",
             "blankProject": "空白项目",
+            "mobileApp": "移动应用 (iOS 和 Android)",
             "startFromScratch": "从零开始",
             "importProject": "导入项目",
             "subscriptions": "订阅",
@@ -229,7 +230,16 @@
                     "tooltip": "添加新文本元素"
                 }
             },
-            "versionHistory": "版本历史"
+            "versionHistory": "版本历史",
+            "runOnDevice": {
+                "button": "在设备上运行",
+                "title": "在手机上打开",
+                "description": "使用 Expo Go 应用(iOS 或 Android)扫描,即可原生运行此应用。你在 Onlook 中的修改会在设备上重新加载。",
+                "lanHint": "手机需要与这台电脑连接同一个 Wi-Fi 网络。",
+                "tunnelHint": "Expo Go 无法直接访问云端沙盒。请在终端运行 `npx expo start --tunnel` 并扫描输出的二维码。",
+                "copy": "复制链接",
+                "copied": "链接已复制"
+            }
         },
         "panels": {
             "edit": {

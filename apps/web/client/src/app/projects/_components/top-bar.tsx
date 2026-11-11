@@ -113,7 +113,26 @@ export const TopBar = ({ searchQuery, onSearchChange }: TopBarProps) => {
         };
     }, [onSearchChange]);
 
-    const handleStartBlankProject = async () => {
+    const handleStartBlankProject = () =>
+        createProjectFromTemplate(Templates.EMPTY_NEXTJS, {
+            title: 'Blank project',
+            name: 'New Project',
+            description: 'Your new blank project',
+            tags: ['blank'],
+        });
+
+    const handleStartMobileProject = () =>
+        createProjectFromTemplate(Templates.EXPO_MOBILE, {
+            title: 'Mobile app',
+            name: 'New Mobile App',
+            description: 'A React Native app for iOS and Android, built with Expo',
+            tags: ['mobile', 'expo'],
+        });
+
+    const createProjectFromTemplate = async (
+        templateKey: Templates,
+        meta: { title: string; name: string; description: string; tags: string[] },
+    ) => {
         if (!user?.id) {
             // Store the return URL and open auth modal
             await localforage.setItem(LocalForageKeys.RETURN_URL, window.location.pathname);
@@ -123,31 +142,32 @@ export const TopBar = ({ searchQuery, onSearchChange }: TopBarProps) => {
 
         setIsCreatingProject(true);
         try {
-            // Create a blank project using the BLANK template
+            const template = SandboxTemplates[templateKey];
             const { sandboxId, previewUrl } = await forkSandbox({
-                sandbox: SandboxTemplates[Templates.EMPTY_NEXTJS],
+                sandbox: { id: template.id, port: template.port },
                 config: {
-                    title: `Blank project - ${user.id}`,
-                    tags: ['blank', user.id],
+                    title: `${meta.title} - ${user.id}`,
+                    tags: [...meta.tags, user.id],
                 },
             });
 
             const newProject = await createProject({
                 project: {
-                    name: 'New Project',
-                    description: 'Your new blank project',
-                    tags: ['blank'],
+                    name: meta.name,
+                    description: meta.description,
+                    tags: meta.tags,
                 },
                 sandboxId,
                 sandboxUrl: previewUrl,
                 userId: user.id,
+                framework: template.framework,
             });
 
             if (newProject) {
                 router.push(`${Routes.PROJECT}/${newProject.id}`);
             }
         } catch (error) {
-            console.error('Error creating blank project:', error);
+            console.error('Error creating project:', error);
             const errorMessage = error instanceof Error ? error.message : String(error);
 
             if (errorMessage.includes('502') || errorMessage.includes('sandbox')) {
@@ -243,6 +263,20 @@ export const TopBar = ({ searchQuery, onSearchChange }: TopBarProps) => {
                                 <Icons.FilePlus className="w-4 h-4 mr-1 text-foreground-secondary group-hover:text-blue-100" />
                             )}
                             {t(transKeys.projects.actions.blankProject)}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                            className={cn(
+                                'focus:bg-emerald-100 focus:text-emerald-900',
+                                'hover:bg-emerald-100 hover:text-emerald-900',
+                                'dark:focus:bg-emerald-900 dark:focus:text-emerald-100',
+                                'dark:hover:bg-emerald-900 dark:hover:text-emerald-100',
+                                'cursor-pointer select-none group',
+                            )}
+                            onSelect={handleStartMobileProject}
+                            disabled={isCreatingProject}
+                        >
+                            <Icons.Mobile className="w-4 h-4 mr-1 text-foreground-secondary group-hover:text-emerald-100" />
+                            {t(transKeys.projects.actions.mobileApp)}
                         </DropdownMenuItem>
                         <DropdownMenuItem
                             className={cn(

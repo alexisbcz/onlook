@@ -50,6 +50,7 @@
             "goToAllProjects": "Go to all Projects",
             "newProject": "New Project",
             "blankProject": "Blank Project",
+            "mobileApp": "Mobile App (iOS & Android)",
             "startFromScratch": "Start from scratch",
             "importProject": "Import a project",
             "subscriptions": "Subscriptions",
@@ -229,7 +230,16 @@
                     "tooltip": "Add a new text element"
                 }
             },
-            "versionHistory": "Version History"
+            "versionHistory": "Version History",
+            "runOnDevice": {
+                "button": "Run on device",
+                "title": "Open on your phone",
+                "description": "Scan with the Expo Go app (iOS or Android) to run this app natively. Edits you make in Onlook reload on the device.",
+                "lanHint": "Your phone must be on the same Wi-Fi network as this computer.",
+                "tunnelHint": "Cloud sandboxes aren't reachable from Expo Go directly. Run `npx expo start --tunnel` in the terminal and scan the QR code it prints.",
+                "copy": "Copy link",
+                "copied": "Link copied"
+            }
         },
         "panels": {
             "edit": {

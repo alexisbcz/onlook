@@ -414,6 +414,55 @@ const scanPagesDirectory = async (
     return nodes;
 };
 
+/**
+ * Expo Router: every file in `app/` is a screen. `index` maps to its folder, `_layout`
+ * and `+html`/`+not-found` style files are not screens, and `(group)` folders don't add
+ * a URL segment.
+ */
+export const scanExpoRouterDirectory = async (
+    sandboxManager: SandboxManager,
+    dir: string,
+    urlPath = '',
+): Promise<PageNode[]> => {
+    let entries: FileEntry[];
+    try {
+        entries = await sandboxManager.readDir(dir);
+    } catch (error) {
+        console.error(`Error reading directory ${dir}:`, error);
+        return [];
+    }
+
+    const nodes: PageNode[] = [];
+    for (const entry of entries) {
+        if (entry.isDirectory) {
+            if (IGNORED_DIRECTORIES.includes(entry.name)) continue;
+            const isGroup = entry.name.startsWith('(') && entry.name.endsWith(')');
+            const childUrl = isGroup ? urlPath : `${urlPath}/${entry.name}`;
+            nodes.push(...(await scanExpoRouterDirectory(sandboxManager, `${dir}/${entry.name}`, childUrl)));
+            continue;
+        }
+
+        const extension = getFileExtension(entry.name);
+        if (!ALLOWED_EXTENSIONS.includes(extension)) continue;
+        const baseName = entry.name.slice(0, -extension.length);
+        if (baseName.startsWith('_') || baseName.startsWith('+')) continue;
+
+        const routePath = baseName === 'index' ? urlPath || '/' : `${urlPath}/${baseName}`;
+        const isRoot = ROOT_PATH_IDENTIFIERS.includes(routePath);
+        nodes.push({
+            id: nanoid(),
+            name: isRoot ? ROOT_PAGE_NAME : baseName === 'index' ? getBaseName(urlPath) : baseName,
+            path: routePath,
+            children: [],
+            isActive: false,
+            isRoot,
+            metadata: {},
+        });
+    }
+
+    return nodes.sort((a, b) => (a.isRoot ? -1 : b.isRoot ? 1 : a.path.localeCompare(b.path)));
+};
+
 export const scanPagesFromSandbox = async (sandboxManager: SandboxManager): Promise<PageNode[]> => {
     // Use router config from sandbox manager
     const routerConfig = await sandboxManager.getRouterConfig();
@@ -421,6 +470,10 @@ export const scanPagesFromSandbox = async (sandboxManager: SandboxManager): Prom
     if (!routerConfig) {
         console.log('No Next.js router detected, returning empty pages');
         return [];
+    }
+
+    if (routerConfig.type === RouterType.EXPO) {
+        return await scanExpoRouterDirectory(sandboxManager, routerConfig.basePath);
     }
 
     if (routerConfig.type === RouterType.APP) {
@@ -452,6 +505,18 @@ export const detectRouterConfig = async (
 
                 if (hasLayout) {
                     return { type: RouterType.APP, basePath: appPath };
+                }
+
+                // Expo Router (React Native): root layout is `_layout.tsx`
+                const hasExpoLayout = entries.some(
+                    (entry) =>
+                        entry.type === 'file' &&
+                        entry.name.startsWith('_layout.') &&
+                        ALLOWED_EXTENSIONS.includes(getFileExtension(entry.name)),
+                );
+
+                if (hasExpoLayout) {
+                    return { type: RouterType.EXPO, basePath: appPath };
                 }
             }
         } catch (error) {

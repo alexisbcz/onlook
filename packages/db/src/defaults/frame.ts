@@ -20,6 +20,12 @@ export const DefaultMobileFrame = {
     height: '956',
 } as const;
 
+/** Frames for React Native (Expo) projects: one iOS and one Android phone, side by side. */
+export const DefaultNativeFrames = {
+    ios: { name: 'iPhone 16 Pro', x: '150', y: '40', width: '402', height: '874' },
+    android: { name: 'Pixel 9', x: '640', y: '40', width: '412', height: '915' },
+} as const;
+
 const DefaultFrame: Record<DefaultFrameType, { x: string; y: string; width: string; height: string }> = {
     [DefaultFrameType.DESKTOP]: DefaultDesktopFrame,
     [DefaultFrameType.MOBILE]: DefaultMobileFrame,

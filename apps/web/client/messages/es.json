@@ -50,6 +50,7 @@
             "goToAllProjects": "Ir a todos los Proyectos",
             "newProject": "Nuevo Proyecto",
             "blankProject": "Proyecto en Blanco",
+            "mobileApp": "App Móvil (iOS y Android)",
             "startFromScratch": "Empezar desde cero",
             "importProject": "Importar un proyecto",
             "subscriptions": "Suscripciones",
@@ -229,7 +230,16 @@
                     "tooltip": "Agregar un nuevo elemento de texto"
                 }
             },
-            "versionHistory": "Historial de Versiones"
+            "versionHistory": "Historial de Versiones",
+            "runOnDevice": {
+                "button": "Ejecutar en dispositivo",
+                "title": "Abrir en tu teléfono",
+                "description": "Escanea con la app Expo Go (iOS o Android) para ejecutar esta app de forma nativa. Tus cambios en Onlook se recargan en el dispositivo.",
+                "lanHint": "Tu teléfono debe estar en la misma red Wi-Fi que este ordenador.",
+                "tunnelHint": "Expo Go no puede acceder directamente a los sandboxes en la nube. Ejecuta `npx expo start --tunnel` en la terminal y escanea el código QR.",
+                "copy": "Copiar enlace",
+                "copied": "Enlace copiado"
+            }
         },
         "panels": {
             "edit": {

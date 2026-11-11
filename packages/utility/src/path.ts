@@ -92,9 +92,10 @@ export const isRootLayoutFile = (
     routerType: RouterType = RouterType.APP,
 ): boolean => {
     const potentialPaths =
-        routerType === RouterType.APP ? ['app', 'src/app'] : ['pages', 'src/pages'];
+        routerType === RouterType.PAGES ? ['pages', 'src/pages'] : ['app', 'src/app'];
     return isTargetFile(filePath, {
-        fileName: 'layout',
+        // Expo Router's root layout is `_layout.tsx`
+        fileName: routerType === RouterType.EXPO ? '_layout' : 'layout',
         targetExtensions: NEXT_JS_FILE_EXTENSIONS,
         potentialPaths,
     });

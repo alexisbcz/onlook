@@ -96,6 +96,7 @@
     "prosemirror-commands": "^1.7.1",
     "prosemirror-history": "^1.4.1",
     "prosemirror-keymap": "^1.2.2",
+    "qrcode.react": "^4.2.0",
     "react": "19.2.0",
     "react-arborist": "^3.4.3",
     "react-codemirror-merge": "4.23.10",
