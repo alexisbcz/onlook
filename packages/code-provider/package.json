@@ -35,6 +35,7 @@
     },
     "dependencies": {
         "@codesandbox/sdk": "^1.1.6",
+        "@onlook/constants": "*",
         "@onlook/models": "*",
         "@onlook/parser": "*",
         "@onlook/utility": "*"

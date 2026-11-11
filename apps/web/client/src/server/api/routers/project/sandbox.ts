@@ -6,9 +6,20 @@ import {
     createCodeProviderClient,
     getStaticCodeProvider,
 } from '@onlook/code-provider';
-import { getSandboxPreviewUrl, SandboxTemplates, Templates } from '@onlook/constants';
+import {
+    getLocalSandboxPreviewUrl,
+    getSandboxPreviewUrl,
+    isLocalSandboxId,
+    SandboxTemplates,
+    Templates,
+} from '@onlook/constants';
 import { shortenUuid } from '@onlook/utility/src/id';
 
+import {
+    createLocalSandbox,
+    isLocalSandboxEnabled,
+    stopLocalSandbox,
+} from '@/server/local-sandbox/manager';
 import { createTRPCRouter, protectedProcedure } from '../../trpc';
 import { listAccessibleSandboxIds, verifySandboxAccess } from './helper';
 
@@ -76,6 +87,10 @@ export const sandboxRouter = createTRPCRouter({
         .mutation(async ({ input, ctx }) => {
             const userId = ctx.user.id;
             await verifySandboxAccess(ctx.db, userId, input.sandboxId);
+            if (isLocalSandboxId(input.sandboxId)) {
+                // Local sandboxes are reached through /api/local-sandbox, no session needed.
+                return null;
+            }
             const provider = await getProvider({
                 sandboxId: input.sandboxId,
                 userId,
@@ -96,6 +111,9 @@ export const sandboxRouter = createTRPCRouter({
         )
         .mutation(async ({ input, ctx }) => {
             await verifySandboxAccess(ctx.db, ctx.user.id, input.sandboxId);
+            if (isLocalSandboxId(input.sandboxId)) {
+                return;
+            }
             const provider = await getProvider({ sandboxId: input.sandboxId });
             try {
                 await provider.pauseProject({});
@@ -138,6 +156,21 @@ export const sandboxRouter = createTRPCRouter({
             // source tree. Templates / fresh sandboxes resolve to no project and
             // are allowed (blank-project + local-import flows fork a template).
             await verifySandboxAccess(ctx.db, ctx.user.id, input.sandbox.id);
+
+            const templateEntry = Object.entries(SandboxTemplates).find(
+                ([, template]) => template.id === input.sandbox.id,
+            );
+            const templateKey = templateEntry?.[0] as Templates | undefined;
+            const template = templateEntry?.[1];
+
+            if (isLocalSandboxEnabled() && template?.git) {
+                const local = await createLocalSandbox({ template: templateKey });
+                return {
+                    sandboxId: local.sandboxId,
+                    previewUrl: getLocalSandboxPreviewUrl(local.port),
+                };
+            }
+
             const MAX_RETRY_ATTEMPTS = 3;
             let lastError: Error | null = null;
 
@@ -146,14 +179,17 @@ export const sandboxRouter = createTRPCRouter({
                     const CodesandboxProvider = await getStaticCodeProvider(
                         CodeProvider.CodeSandbox,
                     );
-                    const sandbox = await CodesandboxProvider.createProject({
-                        source: 'template',
-                        id: input.sandbox.id,
+                    // Git-backed templates (e.g. the Expo mobile template) are cloned.
+                    const sandbox = template?.git
+                        ? await CodesandboxProvider.createProjectFromGit(template.git)
+                        : await CodesandboxProvider.createProject({
+                              source: 'template',
+                              id: input.sandbox.id,
 
-                        // Metadata
-                        title: input.config?.title,
-                        tags: input.config?.tags,
-                    });
+                              // Metadata
+                              title: input.config?.title,
+                              tags: input.config?.tags,
+                          });
 
                     const previewUrl = getSandboxPreviewUrl(sandbox.id, input.sandbox.port);
 
@@ -186,6 +222,10 @@ export const sandboxRouter = createTRPCRouter({
         )
         .mutation(async ({ input, ctx }) => {
             await verifySandboxAccess(ctx.db, ctx.user.id, input.sandboxId);
+            if (isLocalSandboxId(input.sandboxId)) {
+                await stopLocalSandbox(input.sandboxId);
+                return;
+            }
             const provider = await getProvider({ sandboxId: input.sandboxId });
             try {
                 await provider.stopProject({});
@@ -201,6 +241,17 @@ export const sandboxRouter = createTRPCRouter({
             }),
         )
         .mutation(async ({ input }) => {
+            if (isLocalSandboxEnabled()) {
+                const local = await createLocalSandbox({
+                    repoUrl: input.repoUrl,
+                    branch: input.branch,
+                });
+                return {
+                    sandboxId: local.sandboxId,
+                    previewUrl: getLocalSandboxPreviewUrl(local.port),
+                };
+            }
+
             const MAX_RETRY_ATTEMPTS = 3;
             const DEFAULT_PORT = 3000;
             let lastError: Error | null = null;

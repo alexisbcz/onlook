@@ -1,5 +1,6 @@
 import { api } from '@/trpc/client';
 import { CodeProvider, createCodeProviderClient, type Provider } from '@onlook/code-provider';
+import { isLocalSandboxId } from '@onlook/constants';
 import type { Branch } from '@onlook/models';
 import { makeAutoObservable } from 'mobx';
 import type { ErrorManager } from '../error';
@@ -29,7 +30,11 @@ export class SessionManager {
         this.isConnecting = true;
 
         const attemptConnection = async () => {
-            const provider = await createCodeProviderClient(CodeProvider.CodeSandbox, {
+            const provider = isLocalSandboxId(sandboxId)
+                ? await createCodeProviderClient(CodeProvider.Local, {
+                      providerOptions: { local: { sandboxId } },
+                  })
+                : await createCodeProviderClient(CodeProvider.CodeSandbox, {
                 providerOptions: {
                     codesandbox: {
                         sandboxId,

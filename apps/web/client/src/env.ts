@@ -60,6 +60,10 @@ export const env = createEnv({
         GITHUB_APP_ID: z.string().optional(),
         GITHUB_APP_PRIVATE_KEY: z.string().optional(),
         GITHUB_APP_SLUG: z.string().optional(),
+
+        // Local sandboxes (run projects on this machine instead of CodeSandbox)
+        ONLOOK_LOCAL_SANDBOXES: z.enum(['true', 'false']).optional(),
+        ONLOOK_LOCAL_SANDBOX_DIR: z.string().optional(),
     },
     /**
      * Specify your client-side environment variables schema here. This way you can ensure the app
@@ -84,6 +88,8 @@ export const env = createEnv({
      */
     runtimeEnv: {
         NODE_ENV: process.env.NODE_ENV,
+        ONLOOK_LOCAL_SANDBOXES: process.env.ONLOOK_LOCAL_SANDBOXES,
+        ONLOOK_LOCAL_SANDBOX_DIR: process.env.ONLOOK_LOCAL_SANDBOX_DIR,
         CSB_API_KEY: process.env.CSB_API_KEY,
         RESEND_API_KEY: process.env.RESEND_API_KEY,
         NEXT_PUBLIC_FEATURE_COLLABORATION: process.env.NEXT_PUBLIC_FEATURE_COLLABORATION,
