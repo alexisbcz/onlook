@@ -55,7 +55,7 @@
 > This is the open-source visual editor that started Onlook (Next.js + Tailwind). The hosted product we're building next, for AI-native designers, is in early access via the [waitlist](https://www.onlook.com/waitlist?utm_source=github&utm_medium=readme&utm_campaign=waitlist-2026) above.
 
 
-> **This fork adds iOS and Android apps.** Onlook can now create and edit React Native apps built with Expo, show them in iPhone and Android frames, and open them on a real phone through Expo Go. It also adds local sandboxes, so the whole thing runs on your machine without a CodeSandbox account. See [iOS and Android apps](#ios-and-android-apps-expo) below.
+> **This fork adds iOS and Android apps.** Onlook can now create and edit React Native apps built with Expo, show them in iPhone and Android frames, and open them on a real phone through Expo Go. It also adds local sandboxes, so the whole thing runs on your machine without a CodeSandbox account. There is also an Onlook app for iOS and Android, so you can edit your projects from your phone. See [iOS and Android apps](#ios-and-android-apps-expo) and [The Onlook app](#the-onlook-app-iphone-and-android) below.
 
 ## iOS and Android apps (Expo)
 
@@ -118,6 +118,42 @@ With CodeSandbox (the default, `ONLOOK_LOCAL_SANDBOXES` unset), the mobile templ
 - Styling goes through NativeWind classes. Projects that style only with `StyleSheet.create` can still be selected and edited in code, but toolbar edits add classes rather than rewriting style objects.
 - Font management (`next/font`) is turned off for Expo projects.
 - Inline text editing works the same as on web projects. Double-clicking opens the element in the code panel.
+
+## The Onlook app (iPhone and Android)
+
+<p align="center">
+  <img width="300" alt="Creating a mobile app and editing it in the Onlook iPhone app" src="assets/mobile/onlook-app-demo.gif">
+  <br>
+  <a href="assets/mobile/onlook-app-demo.mp4">Watch the full demo (MP4, 54 s)</a>
+</p>
+
+`mobile/` is an Expo app that brings the editor to your phone. Sign in with GitHub, Google or email, and you get your projects list. From there you can:
+
+- Start a project: an iOS and Android app (Expo) or a website (Next.js), with an optional prompt for the AI.
+- Open any project in the editor's phone layout. One frame fills the screen. Drag to pan, pinch to zoom, tap an element to select it.
+- Edit the selected element with the style toolbar above the tab bar. It scrolls sideways and covers the same controls as on desktop (colors, spacing, radius, layout, typography). Changes are written to the code like they are on the web.
+- Switch to Chat, Pages or Layers from the tab bar, and step through the project's frames with the `1/2` button.
+- Long-press a project to delete it.
+
+The app signs in natively, then opens the web editor in a WebView and hands it the session once (`/auth/mobile`). API calls from the app use the Supabase access token as a bearer token, which `createTRPCContext` accepts alongside cookies. The same phone layout shows up in a mobile browser too, on any screen narrower than 768px.
+
+### Run it
+
+Start Onlook as described in [Run it locally](#run-it-locally), then:
+
+```bash
+cd mobile
+cp .env.example .env.local   # point it at your Onlook server and Supabase project
+bun install
+bun run ios       # or: bun run android
+```
+
+`EXPO_PUBLIC_ONLOOK_URL` has to be reachable from the phone or simulator. `localhost` works in the iOS simulator. On an Android emulator, run `adb reverse tcp:3000 tcp:3000` (with your Onlook port). On a real phone, use your computer's LAN address. The app runs in Expo Go, no native build needed.
+
+### Known limits
+
+- The editor needs a few seconds after the frame appears before taps select elements, while it connects to the frame.
+- In production builds, frames load Onlook's preload script from the jsDelivr CDN, pinned to an upstream commit (`ONLOOK_PROD_PRELOAD_SCRIPT_SRC` in `packages/constants/src/files.ts`). That build predates the WebKit fix for reading computed styles, so on iOS the toolbar shows default values (16px, Regular) for the selected element until the pin points to a commit that includes it. Development builds serve the script from `apps/web/client/public` and aren't affected.
 
 # An Open-Source, Visual-First Code Editor
 
