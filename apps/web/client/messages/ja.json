@@ -82,6 +82,15 @@
         }
     },
     "editor": {
+        "mobile": {
+            "back": "プロジェクトに戻る",
+            "undo": "元に戻す",
+            "redo": "やり直す",
+            "design": "デザイン",
+            "chat": "チャット",
+            "pages": "ページ",
+            "layers": "レイヤー"
+        },
         "modes": {
             "design": {
                 "name": "デザイン",

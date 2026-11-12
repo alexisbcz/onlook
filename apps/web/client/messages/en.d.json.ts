@@ -197,6 +197,15 @@ declare const messages: {
         }
     },
     "editor": {
+        "mobile": {
+            "back": "Back to projects",
+            "undo": "Undo",
+            "redo": "Redo",
+            "design": "Design",
+            "chat": "Chat",
+            "pages": "Pages",
+            "layers": "Layers"
+        },
         "modes": {
             "design": {
                 "name": "Design",

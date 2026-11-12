@@ -194,6 +194,15 @@
         }
     },
     "editor": {
+        "mobile": {
+            "back": "返回项目",
+            "undo": "撤销",
+            "redo": "重做",
+            "design": "设计",
+            "chat": "聊天",
+            "pages": "页面",
+            "layers": "图层"
+        },
         "modes": {
             "design": {
                 "name": "设计",

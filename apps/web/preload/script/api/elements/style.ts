@@ -1,5 +1,5 @@
 import type { DomElementStyles } from '@onlook/models';
-import { getHtmlElement, jsonClone } from '../../helpers';
+import { getHtmlElement } from '../../helpers';
 
 export function getStyles(element: HTMLElement): DomElementStyles {
     const computed = getElComputedStyle(element);
@@ -28,10 +28,19 @@ export function getComputedStyleByDomId(domId: string): Record<string, string> {
 }
 
 function getElComputedStyle(element: HTMLElement): Record<string, string> {
-    const computedStyle = jsonClone(window.getComputedStyle(element)) as unknown as Record<
-        string,
-        string
-    >;
+    // Copy each property by name. Cloning the declaration as JSON only works in Chrome, where
+    // camelCase properties like `fontSize` are own properties; WebKit (Safari, the iOS app's
+    // WebView) defines them on the prototype, so the clone would hold only numeric indices.
+    const declaration = window.getComputedStyle(element);
+    const computedStyle: Record<string, string> = {};
+    for (let i = 0; i < declaration.length; i++) {
+        const property = declaration.item(i);
+        if (property.startsWith('--')) {
+            continue;
+        }
+        const camelCased = property.replace(/-([a-z])/g, (_, letter: string) => letter.toUpperCase());
+        computedStyle[camelCased] = declaration.getPropertyValue(property);
+    }
     return computedStyle;
 }
 

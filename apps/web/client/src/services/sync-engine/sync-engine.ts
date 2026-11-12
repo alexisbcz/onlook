@@ -158,7 +158,10 @@ export class CodeProviderSync {
             await this.pullFromSandbox();
             await this.setupWatching();
             // Push any locally modified files (with OIDs) back to sandbox. This is required for the first time sync.
-            void this.pushModifiedFilesToSandbox();
+            // Wait for it: frames load once sync is done, and a frame that loads before the OIDs land shows
+            // elements without them. Chrome catches up through hot reload, but WebKit (Safari, the iOS app)
+            // doesn't apply Expo's hot updates, so elements there stayed unselectable until a reload.
+            await this.pushModifiedFilesToSandbox();
         } catch (error) {
             this.isRunning = false;
             throw error;

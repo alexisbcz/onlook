@@ -7,11 +7,33 @@ import { toast } from '@onlook/ui/sonner';
 import { cn } from '@onlook/ui/utils';
 import throttle from 'lodash/throttle';
 import { observer } from 'mobx-react-lite';
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { RightClickMenu } from '../../right-click-menu';
 
 export const GestureScreen = observer(({ frame, isResizing }: { frame: Frame, isResizing: boolean }) => {
     const editorEngine = useEditorEngine();
+    // Pointer events fire before the mouse events a touch emulates, so this tells a finger
+    // from a mouse. Touch doesn't go through those emulated events at all: iOS drops the
+    // mousedown whenever the page changes during the tap (a hover highlight, any re-render),
+    // so taps would only select some of the time. A tap selects on pointerup instead, and a
+    // finger that moved is a pan, not a tap.
+    const TAP_SLOP = 8;
+    const lastPointerType = useRef<string>('mouse');
+    const touchStart = useRef<{ x: number; y: number } | null>(null);
+    const activeTouches = useRef(0);
+    const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+        lastPointerType.current = e.pointerType;
+        if (e.pointerType !== 'touch') {
+            return;
+        }
+        activeTouches.current++;
+        // A second finger makes this a pinch, not a tap.
+        touchStart.current = activeTouches.current === 1 ? { x: e.clientX, y: e.clientY } : null;
+    };
+    const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+        lastPointerType.current = e.pointerType;
+    };
+    const isTouch = () => lastPointerType.current === 'touch';
 
     const getFrameData: () => FrameData | null = useCallback(() => {
         return editorEngine.frames.get(frame.id);
@@ -97,7 +119,7 @@ export const GestureScreen = observer(({ frame, isResizing }: { frame: Frame, is
     const throttledMouseMove = useMemo(() =>
         throttle(async (e: React.MouseEvent<HTMLDivElement>) => {
             // Skip hover events during drag selection
-            if (editorEngine.state.isDragSelecting) {
+            if (editorEngine.state.isDragSelecting || isTouch()) {
                 return;
             }
             if (
@@ -124,10 +146,39 @@ export const GestureScreen = observer(({ frame, isResizing }: { frame: Frame, is
 
     const handleClick = useCallback(
         (e: React.MouseEvent<HTMLDivElement>) => {
+            if (isTouch()) {
+                return;
+            }
             editorEngine.frames.select([frame]);
         },
         [editorEngine.frames],
     );
+
+    const handlePointerCancel = (e: React.PointerEvent<HTMLDivElement>) => {
+        if (e.pointerType === 'touch') {
+            activeTouches.current = Math.max(0, activeTouches.current - 1);
+            touchStart.current = null;
+        }
+    };
+
+    async function handlePointerUp(e: React.PointerEvent<HTMLDivElement>) {
+        if (e.pointerType !== 'touch') {
+            return;
+        }
+        activeTouches.current = Math.max(0, activeTouches.current - 1);
+        const start = touchStart.current;
+        touchStart.current = null;
+        if (!start) {
+            return;
+        }
+        if (Math.hypot(e.clientX - start.x, e.clientY - start.y) > TAP_SLOP) {
+            return;
+        }
+        editorEngine.frames.select([frame]);
+        if (editorEngine.state.editorMode === EditorMode.DESIGN || editorEngine.state.editorMode === EditorMode.CODE) {
+            await handleMouseEvent(e, MouseAction.MOUSE_DOWN);
+        }
+    }
 
     async function handleDoubleClick(e: React.MouseEvent<HTMLDivElement>) {
         if (editorEngine.state.editorMode === EditorMode.PREVIEW) {
@@ -137,6 +188,9 @@ export const GestureScreen = observer(({ frame, isResizing }: { frame: Frame, is
     }
 
     async function handleMouseDown(e: React.MouseEvent<HTMLDivElement>) {
+        if (isTouch()) {
+            return;
+        }
         if (editorEngine.state.editorMode === EditorMode.DESIGN || editorEngine.state.editorMode === EditorMode.CODE) {
             await handleMouseEvent(e, MouseAction.MOUSE_DOWN);
         } else if (
@@ -221,6 +275,10 @@ export const GestureScreen = observer(({ frame, isResizing }: { frame: Frame, is
         <RightClickMenu>
             <div
                 className={gestureScreenClassName}
+                onPointerDown={handlePointerDown}
+                onPointerMove={handlePointerMove}
+                onPointerUp={handlePointerUp}
+                onPointerCancel={handlePointerCancel}
                 onClick={handleClick}
                 onMouseOut={handleMouseOut}
                 onMouseLeave={handleMouseUp}

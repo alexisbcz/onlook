@@ -61,6 +61,18 @@ export const FrameView = observer(({ frame, isInDragSelection = false }: { frame
     const preloadScriptReady = branchData?.sandbox?.preloadScriptState === PreloadScriptState.INJECTED;
     const isFrameReady = preloadScriptReady && !(isConnecting && !hasTimedOut);
 
+    // The iframe starts loading before the first sync has written OIDs into the sandbox's code.
+    // Chrome picks them up through hot reload, but WebKit (Safari, the iOS app) doesn't apply
+    // Expo's hot updates, so its elements would have no OIDs and edits would fail. Reload once
+    // when the sync finishes so every browser starts from the synced code.
+    const wasPreloadScriptReady = useRef(preloadScriptReady);
+    useEffect(() => {
+        if (preloadScriptReady && !wasPreloadScriptReady.current) {
+            immediateReload();
+        }
+        wasPreloadScriptReady.current = preloadScriptReady;
+    }, [preloadScriptReady, immediateReload]);
+
     useEffect(() => {
         if (isFrameReady) {
             setMessageIndex(0);

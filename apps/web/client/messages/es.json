@@ -194,6 +194,15 @@
         }
     },
     "editor": {
+        "mobile": {
+            "back": "Volver a proyectos",
+            "undo": "Deshacer",
+            "redo": "Rehacer",
+            "design": "Diseño",
+            "chat": "Chat",
+            "pages": "Páginas",
+            "layers": "Capas"
+        },
         "modes": {
             "design": {
                 "name": "Diseño",

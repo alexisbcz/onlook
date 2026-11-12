@@ -9,6 +9,7 @@
 
 import { createAdminClient } from '@/utils/supabase/admin';
 import { createClient } from '@/utils/supabase/server';
+import { createTokenClient, getBearerToken } from '@/utils/supabase/token';
 import { db } from '@onlook/db/src/client';
 import type { User } from '@supabase/supabase-js';
 import { initTRPC, TRPCError } from '@trpc/server';
@@ -29,11 +30,13 @@ import { ZodError } from 'zod';
  * @see https://trpc.io/docs/server/context
  */
 export const createTRPCContext = async (opts: { headers: Headers }) => {
-    const supabase = await createClient();
+    // The iOS/Android app sends a Supabase access token; the web app uses cookies.
+    const bearerToken = getBearerToken(opts.headers);
+    const supabase = bearerToken ? createTokenClient(bearerToken) : await createClient();
     const {
         data: { user },
         error,
-    } = await supabase.auth.getUser();
+    } = bearerToken ? await supabase.auth.getUser(bearerToken) : await supabase.auth.getUser();
 
     if (error) {
         throw new TRPCError({ code: 'UNAUTHORIZED', message: error.message });

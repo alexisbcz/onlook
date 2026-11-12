@@ -194,6 +194,15 @@
         }
     },
     "editor": {
+        "mobile": {
+            "back": "프로젝트로 돌아가기",
+            "undo": "실행 취소",
+            "redo": "다시 실행",
+            "design": "디자인",
+            "chat": "채팅",
+            "pages": "페이지",
+            "layers": "레이어"
+        },
         "modes": {
             "design": {
                 "name": "디자인",

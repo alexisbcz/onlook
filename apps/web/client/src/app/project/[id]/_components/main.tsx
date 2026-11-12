@@ -18,6 +18,8 @@ import { BottomBar } from './bottom-bar';
 import { Canvas } from './canvas';
 import { EditorBar } from './editor-bar';
 import { LeftPanel } from './left-panel';
+import { MobileMain } from './mobile';
+import { useMobileEditor } from './mobile/use-mobile-editor';
 import { RightPanel } from './right-panel';
 import { TopBar } from './top-bar';
 
@@ -25,6 +27,7 @@ export const Main = observer(() => {
     const router = useRouter();
     const editorEngine = useEditorEngine();
     const { isProjectReady, error } = useStartProject();
+    const { isMobile, nativeClient } = useMobileEditor();
     const leftPanelRef = useRef<HTMLDivElement | null>(null);
     const rightPanelRef = useRef<HTMLDivElement | null>(null);
     const { toolbarLeft, toolbarRight, editorBarAvailableWidth } = usePanelMeasurements(
@@ -76,6 +79,16 @@ export const Main = observer(() => {
                 <Icons.LoadingSpinner className="h-6 w-6 animate-spin text-foreground-primary" />
                 <div className="text-xl">Loading project...</div>
             </div>
+        );
+    }
+
+    if (isMobile) {
+        return (
+            <>
+                <MobileMain nativeClient={nativeClient} />
+                <SettingsModalWithProjects />
+                <SubscriptionModal />
+            </>
         );
     }
 
